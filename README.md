@@ -7,4 +7,4 @@ This repository houses an OS for an Operating Systems class.
 - Victoria Lacroix
 - Eric Gelinas
 - Arly Mathiasen
-- David ' The Galactic Conquerer ' Vallieres
+- David Vallieres
