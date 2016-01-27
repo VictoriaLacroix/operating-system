@@ -5,3 +5,4 @@ This repository houses an OS for an Operating Systems class.
 ## Authors
 
 - Victoria Lacroix
+- Eric Gelinas
