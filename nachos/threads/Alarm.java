@@ -1,6 +1,8 @@
 package nachos.threads;
 
 import nachos.machine.*;
+import java.util.Queue;
+import java.util.ArrayDeque;
 
 /**
  * Uses the hardware timer to provide preemption, and to allow threads to sleep
@@ -15,9 +17,10 @@ public class Alarm {
      * alarm.
      */
     public Alarm() {
-	Machine.timer().setInterruptHandler(new Runnable() {
-		public void run() { timerInterrupt(); }
-	    });
+        sleepingThreads = new ArrayDeque<SleepingThread>();
+        Machine.timer().setInterruptHandler(new Runnable() {
+            public void run() { timerInterrupt(); }
+        });
     }
 
     /**
@@ -27,7 +30,17 @@ public class Alarm {
      * that should be run.
      */
     public void timerInterrupt() {
-	KThread.currentThread().yield();
+        KThread.currentThread().yield();
+        Queue<SleepingThread> nextQueue = new ArrayDeque<SleepingThread>();
+        for(int i = 0; i < sleepingThreads.size(); ++i){
+            SleepingThread s = sleepingThreads.remove();
+            if(Machine.timer().getTime() > s.wakeTime){
+                s.thread.ready();
+            }else{
+                nextQueue.add(s);
+            }
+        }
+        sleepingThreads = nextQueue;
     }
 
     /**
@@ -37,17 +50,27 @@ public class Alarm {
      * interrupt where
      *
      * <p><blockquote>
-     * (current time) >= (WaitUntil called time)+(x)
+     * (current time) &gt;= (WaitUntil called time)+(x)
      * </blockquote>
      *
-     * @param	x	the minimum number of clock ticks to wait.
+     * @param   x       the minimum number of clock ticks to wait.
      *
-     * @see	nachos.machine.Timer#getTime()
+     * @see     nachos.machine.Timer#getTime()
      */
     public void waitUntil(long x) {
-	// for now, cheat just to get something working (busy waiting is bad)
-	long wakeTime = Machine.timer().getTime() + x;
-	while (wakeTime > Machine.timer().getTime())
-	    KThread.yield();
+        sleepingThreads.add(new SleepingThread(KThread.currentThread(), Machine.timer().getTime() + x));
+        KThread.yield();
+    }
+
+    private Queue<SleepingThread> sleepingThreads = null;
+
+    private class SleepingThread {
+        public KThread thread;
+        public long wakeTime;
+
+        public SleepingThread(KThread k, long t) {
+            thread = k;
+            wakeTime = t;
+        }
     }
 }
