@@ -1,7 +1,8 @@
 package nachos.threads;
 
 import nachos.machine.*;
-
+import java.util.Queue;
+import java.util.ArrayDeque;
 /**
  * A KThread is a thread that can be used to execute Nachos kernel code. Nachos
  * allows multiple threads to run concurrently.
@@ -57,6 +58,7 @@ public class KThread {
 
 	    createIdleThread();
 	}
+	JoinedThreads = new ArrayDeque(16);
     }
 
     /**
@@ -185,6 +187,12 @@ public class KThread {
 	Lib.debug(dbgThread, "Finishing thread: " + currentThread.toString());
 	
 	Machine.interrupt().disable();
+//free all joined threads
+	while(!joinedThreads.isEmpty()){
+		KThread toFree = joinedThreads.poll()
+		toFree.status = statusReady;
+		KThread.readyQueue.waitForAccess(toFree);
+	}
 
 	Machine.autoGrader().finishingCurrentThread();
 
@@ -274,10 +282,34 @@ public class KThread {
      */
     public void join() {
 	Lib.debug(dbgThread, "Joining to thread: " + toString());
-
 	Lib.assertTrue(this != currentThread);
+	Lib.assertTrue(CheckNoCycles());
 
+	boolean intStatus = Machine.interrupt().disable();	
+
+	if(status != statusFinished){
+		JoinedThreads.add(KThread.currentThread);
+		KThread.sleep();
+	}
+	Machine.interrupt().restore(intStatus);	
     }
+
+
+    //checks through joined threads and checks for cyclical dependency
+    private boolean  CheckNoCycles(){
+	if(JoinedThreads.contains(currentThread)){
+		return false;
+	}else{
+		iter = JoinedThreads.iterator();
+		while(iter.hasNext()){
+			iter.Next.CheckNoCycles();
+		}
+	}
+	return true;
+    }
+
+
+
 
     /**
      * Create the idle thread. Whenever there are no threads ready to be run,
@@ -431,6 +463,7 @@ public class KThread {
     private String name = "(unnamed thread)";
     private Runnable target;
     private TCB tcb;
+    private ArrayDeque<KThread> JoinedThreads = null;
 
     /**
      * Unique identifer for this thread. Used to deterministically compare
@@ -444,4 +477,5 @@ public class KThread {
     private static KThread currentThread = null;
     private static KThread toBeDestroyed = null;
     private static KThread idleThread = null;
+
 }
