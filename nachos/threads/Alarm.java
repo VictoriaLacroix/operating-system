@@ -2,7 +2,7 @@ package nachos.threads;
 
 import nachos.machine.*;
 import java.util.Queue;
-import java.util.ArrayDeque;
+import java.util.concurrent.PriorityBlockingQueue;
 
 /**
  * Uses the hardware timer to provide preemption, and to allow threads to sleep
@@ -17,7 +17,7 @@ public class Alarm {
      * alarm.
      */
     public Alarm() {
-        sleepingThreads = new ArrayDeque<SleepingThread>();
+        sleepingThreads = new PriorityBlockingQueue<SleepingThread>();
         Machine.timer().setInterruptHandler(new Runnable() {
             public void run() { timerInterrupt(); }
         });
@@ -31,16 +31,16 @@ public class Alarm {
      */
     public void timerInterrupt() {
         KThread.currentThread().yield();
-        Queue<SleepingThread> nextQueue = new ArrayDeque<SleepingThread>();
         for(int i = 0; i < sleepingThreads.size(); ++i){
-            SleepingThread s = sleepingThreads.remove();
+            SleepingThread s = sleepingThreads.peek();
             if(Machine.timer().getTime() > s.wakeTime){
                 s.thread.ready();
+                sleepingThreads.poll();
             }else{
-                nextQueue.add(s);
+              // Priorty queue only has threads that do not need to be woken up.
+              break;
             }
         }
-        sleepingThreads = nextQueue;
     }
 
     /**
@@ -64,13 +64,17 @@ public class Alarm {
 
     private Queue<SleepingThread> sleepingThreads = null;
 
-    private class SleepingThread {
+    private class SleepingThread implements Comparable<SleepingThread> {
         public KThread thread;
         public long wakeTime;
 
         public SleepingThread(KThread k, long t) {
             thread = k;
             wakeTime = t;
+        }
+
+        public int compareTo(SleepingThread other){
+            return (int)(other.wakeTime - this.wakeTime);
         }
     }
 }
