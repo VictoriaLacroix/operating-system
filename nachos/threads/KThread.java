@@ -3,6 +3,7 @@ package nachos.threads;
 import nachos.machine.*;
 import java.util.Queue;
 import java.util.ArrayDeque;
+import java.util.Iterator;
 /**
  * A KThread is a thread that can be used to execute Nachos kernel code. Nachos
  * allows multiple threads to run concurrently.
@@ -188,8 +189,8 @@ public class KThread {
 	
 	Machine.interrupt().disable();
 //free all joined threads
-	while(!joinedThreads.isEmpty()){
-		KThread toFree = joinedThreads.poll()
+	while(!KThread.currentThread.JoinedThreads.isEmpty()){
+		KThread toFree = KThread.currentThread.JoinedThreads.poll();
 		toFree.status = statusReady;
 		KThread.readyQueue.waitForAccess(toFree);
 	}
@@ -300,9 +301,9 @@ public class KThread {
 	if(JoinedThreads.contains(currentThread)){
 		return false;
 	}else{
-		iter = JoinedThreads.iterator();
+		Iterator<KThread> iter = JoinedThreads.iterator();
 		while(iter.hasNext()){
-			iter.Next.CheckNoCycles();
+			iter.next().CheckNoCycles();
 		}
 	}
 	return true;
