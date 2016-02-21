@@ -189,13 +189,8 @@ public class KThread {
 	
 	Machine.interrupt().disable();
 //free all joined threads
-<<<<<<< HEAD
 	while(!KThread.currentThread.JoinedThreads.isEmpty()){
 		KThread toFree = KThread.currentThread.JoinedThreads.poll();
-=======
-	while(!joinedThreads.isEmpty()){
-		KThread toFree = joinedThreads.poll()
->>>>>>> 70a6bff07e3ba40f42707c01b45fa686647f827e
 		toFree.status = statusReady;
 		KThread.readyQueue.waitForAccess(toFree);
 	}
@@ -295,38 +290,23 @@ public class KThread {
 
 	if(status != statusFinished){
 		JoinedThreads.add(KThread.currentThread);
-<<<<<<< HEAD
-		sleep();
-	}
-	Machine.interrupt().restore(intStatus);	
-    }
-
-
-=======
 		KThread.sleep();
 	}
 	Machine.interrupt().restore(intStatus);	
     }
 
 
->>>>>>> 70a6bff07e3ba40f42707c01b45fa686647f827e
     //checks through joined threads and checks for cyclical dependency
     private boolean  CheckNoCycles(){
 	if(JoinedThreads.contains(currentThread)){
 		return false;
 	}else{
-<<<<<<< HEAD
 		Iterator<KThread> iter = JoinedThreads.iterator();
 		while(iter.hasNext()){
 			boolean check = iter.next().CheckNoCycles();
 			if(check == false){
 				return false;
 			}
-=======
-		iter = JoinedThreads.iterator();
-		while(iter.hasNext()){
-			iter.Next.CheckNoCycles();
->>>>>>> 70a6bff07e3ba40f42707c01b45fa686647f827e
 		}
 	}
 	return true;
