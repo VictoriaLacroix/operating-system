@@ -290,7 +290,7 @@ public class KThread {
 
 	if(status != statusFinished){
 		JoinedThreads.add(KThread.currentThread);
-		sleep();
+		KThread.sleep();
 	}
 	Machine.interrupt().restore(intStatus);	
     }
