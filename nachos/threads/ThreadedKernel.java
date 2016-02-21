@@ -2,7 +2,7 @@ package nachos.threads;
 
 import nachos.machine.*;
 
-/**
+/** 
  * A multi-threaded OS kernel.
  */
 public class ThreadedKernel extends Kernel {
@@ -52,6 +52,7 @@ public class ThreadedKernel extends Kernel {
 	if (Machine.bank() != null) {
 	    ElevatorBank.selfTest();
 	}
+	Communicator.selfTest();
     }
     
     /**
