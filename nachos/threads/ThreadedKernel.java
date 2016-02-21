@@ -2,7 +2,7 @@ package nachos.threads;
 
 import nachos.machine.*;
 
-/**
+/** 
  * A multi-threaded OS kernel.
  */
 public class ThreadedKernel extends Kernel {

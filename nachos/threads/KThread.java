@@ -4,7 +4,7 @@ import nachos.machine.*;
 import java.util.Queue;
 import java.util.ArrayDeque;
 import java.util.Iterator;
-/**
+/** 
  * A KThread is a thread that can be used to execute Nachos kernel code. Nachos
  * allows multiple threads to run concurrently.
  *
