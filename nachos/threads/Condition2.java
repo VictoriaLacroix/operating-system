@@ -28,10 +28,7 @@ public class Condition2 {
    
     
     public static void selfTest() {
-    	Lib.debug('t', "WOOOOOOOHH!!!!!!!!!!!!");
-    	Lib.debug('e', "WOOOOOOOHH!!!!!!!!!!!!");
-    	Lib.debug('c', "WOOOOOOOHH!!!!!!!!!!!!");
-    	System.out.println("hrlllllllllllllllooooooooo");
+    	
         }
 
     /**
