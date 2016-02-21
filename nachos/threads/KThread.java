@@ -290,7 +290,7 @@ public class KThread {
 
 	if(status != statusFinished){
 		JoinedThreads.add(KThread.currentThread);
-		KThread.sleep();
+		sleep();
 	}
 	Machine.interrupt().restore(intStatus);	
     }
@@ -303,7 +303,10 @@ public class KThread {
 	}else{
 		Iterator<KThread> iter = JoinedThreads.iterator();
 		while(iter.hasNext()){
-			iter.next().CheckNoCycles();
+			boolean check = iter.next().CheckNoCycles();
+			if(check == false){
+				return false;
+			}
 		}
 	}
 	return true;
@@ -438,7 +441,95 @@ public class KThread {
 	
 	new KThread(new PingTest(1)).setName("forked thread").fork();
 	new PingTest(0).run();
+
+
+	KThread T1,T2,T3,T4,T5,T6,T7,T8;
+	
+
+	Lib.debug('f',"KThread join test 1 : join thread already in progress");
+	T1 = new KThread(new TestThread("T1"));
+	T2 = new KThread(new TestThread("T2",T1));
+
+	T1.setName("T1");
+	T1.fork();
+	T2.setName("T2");
+	T2.fork();
+
+	T1.join();
+	T2.join();	
+
+	Lib.debug('f',"Kthread join test 1 complete\nKthread join test 2 : join thread which has not yet started running");
+	T4 = new KThread(new TestThread("T4"));
+	T3 = new KThread(new TestThread("T3",T4));
+
+	T3.setName("T3");
+	T3.fork();
+	T4.setName("T4");
+	T4.fork();
+
+	T3.join();
+	T4.join();
+	
+	Lib.debug('f', "KThread join test 2 complete\nKThread join test 3 : join a finished thread");
+	T5 = new KThread(new TestThread("T5",T4));
+	
+	T5.setName("T5");
+	T5.fork();
+
+	T5.join();
+
+	Lib.debug('f',"KThread join test 3 complete\nKThread join test 4 : join a thread that's joined a thread");
+
+	T6 = new KThread(new TestThread("T6"));
+	T7 = new KThread(new TestThread("T7",T6));
+	T8 = new KThread(new TestThread("T8",T7));
+
+	T6.setName("T6");
+	T6.fork();
+	T7.setName("T7");
+	T7.fork();
+	T8.setName("T8");
+	T8.fork();
+
+	T6.join();
+	T7.join();
+	T8.join();
+
+	Lib.debug('f',"KThread join test 4 complete\nKThread join tests complete");
+
+	Lib.debug('f',"Exit KThread.selfTest");
     }
+
+    private static class TestThread implements Runnable {
+	String name = null;
+	KThread dependsOn = null;
+	public TestThread(String name){
+		this.name = name;
+	}
+
+	public TestThread(String name, KThread dependsOn){
+		this.name = name;
+		this.dependsOn = dependsOn;
+	}
+
+	public void run(){
+		Lib.debug('f',name+" has started");
+
+		if(dependsOn != null){
+			Lib.debug('f',"joining "+dependsOn);
+			dependsOn.join();			
+		}
+		for(int i = 0; i<10; i++){
+			Lib.debug('f',name+" is running");
+			currentThread.yield();
+		}
+
+		Lib.debug('f',name+" is finished");
+		KThread.finish();
+	}
+
+    }
+
 
     private static final char dbgThread = 't';
 
