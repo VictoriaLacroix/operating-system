@@ -29,10 +29,10 @@ public class Condition2 {
    	private ThreadQueue waitQueue = ThreadedKernel.scheduler.newThreadQueue(false);
     private Lock conditionLock;
 	private boolean isNext = false; // boolean flag for wakeall(), makes sure something is in queue.
-	public static boolean supressDebug = false;	
+	public static boolean supressDebug = true;	
 	
     public static void selfTest() {
-		
+		supressDebug = false;		
 		
 		Lib.debug('e',"\n\n\n --------------------------------- !Entering Condition2 SelfTest! -------------------------------");
 		
@@ -83,6 +83,7 @@ public class Condition2 {
 		l.acquire();
 		c2.wakeAll();
 		Lib.debug('e'," --------------------------------- !Exiting Condition2 SelfTest! ------------------------------- \n\n\n");
+		supressDebug = true;
         }
 
     /**
