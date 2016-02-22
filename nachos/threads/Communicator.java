@@ -115,6 +115,7 @@ public class Communicator {
 	}
 	public static void selfTest(){
 		Communicator ourCom = new Communicator(); //Communicator for our testcase
+		Condition2.supressDebug = true;
 		Lib.debug('u',"\nAttempt 1 : Queued a Speaker with message = 1 then a Listener");
 		KThread t1 = new KThread(new testSpeaker(ourCom,1)); 
 		t1.setName("CommunicatorThread1");
@@ -167,5 +168,6 @@ public class Communicator {
 		t10.join();//queueing the listener #2
 		t11.join();//queueing the speaker #1
 		t12.join();//queueing the speaker #2
+		Condition2.supressDebug = false;
 	}
 }
