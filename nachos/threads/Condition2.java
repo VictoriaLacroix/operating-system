@@ -29,7 +29,7 @@ public class Condition2 {
    	private ThreadQueue waitQueue = ThreadedKernel.scheduler.newThreadQueue(false);
     private Lock conditionLock;
 	private boolean isNext = false; // boolean flag for wakeall(), makes sure something is in queue.
-	
+	public static boolean supressDebug = false;	
 	
     public static void selfTest() {
 		
@@ -98,13 +98,13 @@ public class Condition2 {
 		
 		conditionLock.release();
 
-		if(Communicator.supressDebug == false)
+		if(supressDebug == false)
 			Lib.debug('e', KThread.currentThread().getName() + " is sleeping now!");
 	
 		isNext = true; // boolean flag for wakeall(), makes sure something is in queue.
 		waitQueue.waitForAccess(KThread.currentThread());
 		
-		if(Communicator.supressDebug == false){
+		if(supressDebug == false){
 			Lib.debug('e', "\n Current Sleeping threads: \n" );
 			waitQueue.print(); // This code is here for debug purposes, i'd much rather use a Lib.debug, but I'm not rewriting other lc
 			Lib.debug('e', "\n" );
@@ -132,7 +132,7 @@ public class Condition2 {
 				
 				if(kthread != null){
 					isNext = true; // boolean flag for wakeall(), makes sure something is in queue.
-					if(Communicator.supressDebug == false){
+					if(supressDebug == false){
 						Lib.debug('e',KThread.currentThread().getName() + " is awoken now! \n");
 						Lib.debug('e', "Threads still on queue: \n" );
 						waitQueue.print();

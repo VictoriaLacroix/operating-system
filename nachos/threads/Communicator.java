@@ -168,6 +168,6 @@ public class Communicator {
 		t10.join();//queueing the listener #2
 		t11.join();//queueing the speaker #1
 		t12.join();//queueing the speaker #2
-		Condition2.suppressDebug = false;
+		Condition2.supressDebug = false;
 	}
 }
