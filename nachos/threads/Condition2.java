@@ -24,10 +24,11 @@ public class Condition2 {
      */
     public Condition2(Lock conditionLock) {
         this.conditionLock = conditionLock;
+	
     }
     
-    
-    private ArrayDeque<KThread> waitQueue = new ArrayDeque(45);
+    private ThreadQueue waitQueue = ThreadedKernel.scheduler.newThreadQueue(false);
+	private boolean isEmpty = true;
     private Lock conditionLock;
     public static boolean supressDebug = true;  
     
@@ -102,14 +103,12 @@ public class Condition2 {
         if(supressDebug == false)
             Lib.debug('e', KThread.currentThread().getName() + " is sleeping now!");
     
-        waitQueue.push(KThread.currentThread());
-        
+        waitQueue.waitForAccess(KThread.currentThread());
+        isEmpty = false;
         if(supressDebug == false){
             Lib.debug('e', "\n Current Sleeping threads: \n" );
-			Object[] waitQueuePrint = waitQueue.toArray();
-            for(int i = 0; i<waitQueue.size(); i++){
-				 Lib.debug('e', waitQueuePrint[i].toString() );
-			}
+			waitQueue.print();
+				
             Lib.debug('e', "\n" );
         }
         
@@ -131,21 +130,21 @@ public class Condition2 {
                 Lib.assertTrue(conditionLock.isHeldByCurrentThread());
                 boolean iStat = Machine.interrupt().disable();
                 
-                KThread kthread = waitQueue.pop();
+                KThread kthread = waitQueue.nextThread();
                 
-                if(!waitQueue.isEmpty()){
+                if(kthread !=null ){
                    
                     if(supressDebug == false){
                         Lib.debug('e',KThread.currentThread().getName() + " is awoken now! \n");
                         Lib.debug('e', "Threads still on queue: \n" );
-                        Object[] waitQueuePrint = waitQueue.toArray();
-							for(int i = 0; i<waitQueue.size(); i++){
-								 Lib.debug('e', waitQueuePrint[i].toString() );
-							}
+						waitQueue.print();
                         Lib.debug('e', "\n" );
                     }
                     kthread.ready();
                 }
+				else{
+					isEmpty = true;
+				}
                 Machine.interrupt().restore(iStat);
                 
     }
@@ -160,18 +159,12 @@ public class Condition2 {
     public void wakeAll() {
         Lib.assertTrue(conditionLock.isHeldByCurrentThread());
         boolean iStat = Machine.interrupt().disable();
+         
+			wake();
             
-            wake();
-            
-        while(!waitQueue.isEmpty()){
+        while(!isEmpty){
             wake();
         }
-		 Lib.debug('e',KThread.currentThread().getName() + " is awoken now! \n");
-			 Lib.debug('e', "Threads still on queue: \n" );
-			Object[] waitQueuePrint = waitQueue.toArray();
-				for(int i = 0; i<waitQueue.size(); i++){
-					 Lib.debug('e', waitQueuePrint[i].toString() );
-				}
 
         Machine.interrupt().restore(iStat);
     }
@@ -198,7 +191,7 @@ public class Condition2 {
                 c2.sleep();
                 lock.release();
                 Lib.debug('e', name + " is awake.");
-                
+                KThread.finish();
             }
         }
      }
