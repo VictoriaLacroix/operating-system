@@ -1,7 +1,8 @@
 package nachos.threads;
 
 import nachos.machine.*;
-
+import java.util.Queue;
+import java.util.ArrayDeque;
 
 /**
  * An implementation of condition variables that disables interrupt()s for
@@ -26,9 +27,8 @@ public class Condition2 {
     }
     
     
-    private ThreadQueue waitQueue = ThreadedKernel.scheduler.newThreadQueue(false);
+    private ArrayDeque<KThread> waitQueue = new ArrayDeque(45);
     private Lock conditionLock;
-    private boolean isNext = false; // boolean flag for wakeall(), makes sure something is in queue.
     public static boolean supressDebug = true;  
     
     public static void selfTest() {
@@ -102,12 +102,14 @@ public class Condition2 {
         if(supressDebug == false)
             Lib.debug('e', KThread.currentThread().getName() + " is sleeping now!");
     
-        isNext = true; // boolean flag for wakeall(), makes sure something is in queue.
-        waitQueue.waitForAccess(KThread.currentThread());
+        waitQueue.push(KThread.currentThread());
         
         if(supressDebug == false){
             Lib.debug('e', "\n Current Sleeping threads: \n" );
-            waitQueue.print(); // This code is here for debug purposes, i'd much rather use a Lib.debug, but I'm not rewriting other lc
+			Object[] waitQueuePrint = waitQueue.toArray();
+            for(int i = 0; i<waitQueue.size(); i++){
+				 Lib.debug('e', waitQueuePrint[i].toString() );
+			}
             Lib.debug('e', "\n" );
         }
         
@@ -129,19 +131,20 @@ public class Condition2 {
                 Lib.assertTrue(conditionLock.isHeldByCurrentThread());
                 boolean iStat = Machine.interrupt().disable();
                 
-                KThread kthread = waitQueue.nextThread();
+                KThread kthread = waitQueue.pop();
                 
-                if(kthread != null){
-                    isNext = true; // boolean flag for wakeall(), makes sure something is in queue.
+                if(!waitQueue.isEmpty()){
+                   
                     if(supressDebug == false){
                         Lib.debug('e',KThread.currentThread().getName() + " is awoken now! \n");
                         Lib.debug('e', "Threads still on queue: \n" );
-                        waitQueue.print();
+                        Object[] waitQueuePrint = waitQueue.toArray();
+							for(int i = 0; i<waitQueue.size(); i++){
+								 Lib.debug('e', waitQueuePrint[i].toString() );
+							}
                         Lib.debug('e', "\n" );
                     }
                     kthread.ready();
-                }else{
-                    isNext = false; // boolean flag for wakeall(), makes sure something is in queue.
                 }
                 Machine.interrupt().restore(iStat);
                 
@@ -160,7 +163,7 @@ public class Condition2 {
             
             wake();
             
-        while(isNext == true){
+        while(!waitQueue.isEmpty()){
             wake();
         }
         
