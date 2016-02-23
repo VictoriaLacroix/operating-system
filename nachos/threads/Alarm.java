@@ -58,8 +58,11 @@ public class Alarm {
      * @see     nachos.machine.Timer#getTime()
      */
     public void waitUntil(long x) {
-        sleepingThreads.add(new SleepingThread(KThread.currentThread(), Machine.timer().getTime() + x));
-        KThread.yield();
+        if (x <= Machine.timer().getTime()) return;
+        sleepingThreads.add(new SleepingThread(KThread.currentThread(), x));
+        Machine.interrupt().disable();
+        KThread.sleep();
+        Machine.interrupt().enable();
     }
 
     private Queue<SleepingThread> sleepingThreads = null;
@@ -74,7 +77,79 @@ public class Alarm {
         }
 
         public int compareTo(SleepingThread other){
-            return (int)(other.wakeTime - this.wakeTime);
+            return (int)(this.wakeTime - other.wakeTime);
         }
+
+        @Override
+        public String toString(){
+            return "SleepingThread: [" + thread + ", " + wakeTime  + "]";
+        }
+    }
+
+    private static class AlarmTestThread implements Runnable {
+        private long wakeTime;
+        private KThread dependsOn;
+
+        public AlarmTestThread(long wakeTime, KThread dependsOn) {
+            this.wakeTime = wakeTime;
+            this.dependsOn = dependsOn;
+        }
+
+        public void run() {
+            String name = KThread.currentThread().getName();
+            Lib.debug('v', Machine.timer().getTime() + ": " + name + " is starting execution.");
+            if(dependsOn != null){
+                Lib.debug('v', Machine.timer().getTime() + ": " + name + " is waiting for " + dependsOn + ".");
+                dependsOn.join();
+            }
+            if(Machine.timer().getTime() < wakeTime){
+                Lib.debug('v', Machine.timer().getTime() + ": " + name + " is sleeping until " + wakeTime + ".");
+                ThreadedKernel.alarm.waitUntil(wakeTime);
+                Lib.debug('v', Machine.timer().getTime() + ": " + name + " woke up.");
+            } else {
+                Lib.debug('v', Machine.timer().getTime() + ": " + name + " doesn't need to sleep.");
+            }
+            Lib.debug('v', Machine.timer().getTime() + ": " + name + " is finishing execution.");
+            KThread.finish();
+        }
+    }
+
+    /**
+     * Self test for Alarm.
+     */
+    public static void selfTest(){
+        Lib.debug('v',"\n---- Entering selfTest() for Alarm.class ---------------------------------------");
+
+        Lib.debug('v',"\n-- Test 1: Assure that a thread waits a certain time. --------------------------");
+        Lib.debug('v',"-- Alarm Thread 2 should awaken 5000 ticks after Alarm Thread 1. ---------------");
+        KThread thread1 = new KThread(new AlarmTestThread(Machine.timer().getTime() + 10000, null));
+        thread1.setName("Alarm Thread 1");
+        KThread thread2 = new KThread(new AlarmTestThread(Machine.timer().getTime() + 15000, null));
+        thread2.setName("Alarm Thread 2");
+        thread1.fork();
+        thread2.fork();
+        thread1.join();
+        thread2.join();
+
+        Lib.debug('v',"\n-- Test 2: Assure that a thread will wake up if told to wait for a past time. --");
+        Lib.debug('v',"-- Alarm Thread 3 should not sleep. --------------------------------------------");
+        KThread thread3 = new KThread(new AlarmTestThread(Machine.timer().getTime() - 5000, null));
+        thread3.setName("Alarm Thread 3");
+        thread3.fork();
+        thread3.join();
+
+        Lib.debug('v',"\n-- Test 3: Assure that a thread will wait for a sleeping thread. ---------------");
+        Lib.debug('v',"-- Alarm Thread 5 will wait until Alarm Thread 4 wakes up. ---------------------");
+        KThread thread4 = new KThread(new AlarmTestThread(Machine.timer().getTime() + 10000, null));
+        thread4.setName("Alarm Thread 4");
+        //have thread4 joining thread3, which will sleep. thread4 will wait for thread3 to wake
+        KThread thread5 = new KThread(new AlarmTestThread(Machine.timer().getTime(), thread4));
+        thread5.setName("Alarm Thread 5");
+        thread4.fork();
+        thread5.fork();
+        thread4.join();
+        thread5.join();
+
+        Lib.debug('v',"\n---- Exiting selfTest() for Alarm.class ----------------------------------------\n");
     }
 }
