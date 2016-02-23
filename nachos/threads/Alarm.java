@@ -120,6 +120,13 @@ public class Alarm {
     public static void selfTest(){
         Lib.debug('v',"\n---- Entering selfTest() for Alarm.class ---------------------------------------");
 
+        /*
+         * All threads output their debug data with the time of the current print, as Alarms are time-sensitive.
+         */
+
+        /*
+         * Test 1 tests the wake order and times for threads that use alarms.
+         */
         Lib.debug('v',"\n-- Test 1: Assure that threads wake in order. ----------------------------------");
         Lib.debug('v',"-- Alarm Thread 2 should awaken 5000 ticks after Alarm Thread 1. ---------------");
         KThread thread1 = new KThread(new AlarmTestThread(Machine.timer().getTime() + 20000, null));
@@ -131,18 +138,29 @@ public class Alarm {
         thread1.join();
         thread2.join();
 
+        /*
+         * Test 2 tests if the wake time is valid I.E has yet to pass.
+         */
         Lib.debug('v',"\n-- Test 2: Assure that a thread will wake up if told to wait for a past time. --");
         Lib.debug('v',"-- Alarm Thread 3 should not sleep. --------------------------------------------");
+        // Current time minus 5000 is always in the past.
+        // Generally, just using a subtraction is bad practice,
+        // but the previous test forces at least 15000 ticks to
+        // elapse, so this test is safe.
         KThread thread3 = new KThread(new AlarmTestThread(Machine.timer().getTime() - 5000, null));
         thread3.setName("Alarm Thread 3");
         thread3.fork();
         thread3.join();
 
+        /*
+         * Test 3 tests joins to make sure that a joining thread will wait for another to be awoken by the Alarm.
+         */
         Lib.debug('v',"\n-- Test 3: Assure that a thread will wait for a sleeping thread. ---------------");
         Lib.debug('v',"-- Alarm Thread 5 will wait until Alarm Thread 4 wakes up. ---------------------");
         KThread thread4 = new KThread(new AlarmTestThread(Machine.timer().getTime() + 10000, null));
         thread4.setName("Alarm Thread 4");
-        //have thread4 joining thread3, which will sleep. thread4 will wait for thread3 to wake
+        // Have thread4 joining thread3, which will sleep.
+        // Thread4 will wait for thread3 to wake.
         KThread thread5 = new KThread(new AlarmTestThread(Machine.timer().getTime(), thread4));
         thread5.setName("Alarm Thread 5");
         thread4.fork();
