@@ -437,7 +437,7 @@ public class KThread {
      * Tests whether this module is working.
      */
     public static void selfTest() {
-        Lib.debug(dbgThread, "Enter KThread.selfTest");
+        Lib.debug(dbgThread, "--------------------------------------Enter KThread.selfTest--------------------------------");
         
         new KThread(new PingTest(1)).setName("forked thread").fork();
         new PingTest(0).run();
@@ -446,7 +446,7 @@ public class KThread {
         KThread T1,T2,T3,T4,T5,T6,T7,T8;
         
 
-        Lib.debug('f',"KThread join test 1 : join thread already in progress");
+        Lib.debug('f',"-----------KThread join test 1 : join thread already in progress------------");
         T1 = new KThread(new TestThread("T1"));
         T2 = new KThread(new TestThread("T2",T1));
 
@@ -470,7 +470,7 @@ public class KThread {
         T3.join();
         T4.join();
         
-        Lib.debug('f', "KThread join test 2 complete\nKThread join test 3 : join a finished thread");
+        Lib.debug('f', "-------KThread join test 2 complete\nKThread join test 3 : join a finished thread---------");
         T5 = new KThread(new TestThread("T5",T4));
         
         T5.setName("T5");
@@ -478,7 +478,7 @@ public class KThread {
 
         T5.join();
 
-        Lib.debug('f',"KThread join test 3 complete\nKThread join test 4 : join a thread that's joined a thread");
+        Lib.debug('f',"--------KThread join test 3 complete\nKThread join test 4 : join a thread that's joined a thread-------");
 
         T6 = new KThread(new TestThread("T6"));
         T7 = new KThread(new TestThread("T7",T6));
@@ -495,9 +495,9 @@ public class KThread {
         T7.join();
         T8.join();
 
-        Lib.debug('f',"KThread join test 4 complete\nKThread join tests complete");
+        Lib.debug('f',"-------KThread join test 4 complete\nKThread join tests complete----------");
 
-        Lib.debug('f',"Exit KThread.selfTest");
+        Lib.debug('f',"----------------------------------------Exit KThread.selfTest--------------------------------");
     }
 
     private static class TestThread implements Runnable {
