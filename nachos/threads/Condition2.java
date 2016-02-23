@@ -166,7 +166,13 @@ public class Condition2 {
         while(!waitQueue.isEmpty()){
             wake();
         }
-        
+		 Lib.debug('e',KThread.currentThread().getName() + " is awoken now! \n");
+			 Lib.debug('e', "Threads still on queue: \n" );
+			Object[] waitQueuePrint = waitQueue.toArray();
+				for(int i = 0; i<waitQueue.size(); i++){
+					 Lib.debug('e', waitQueuePrint[i].toString() );
+				}
+
         Machine.interrupt().restore(iStat);
     }
 
