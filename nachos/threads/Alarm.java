@@ -120,11 +120,11 @@ public class Alarm {
     public static void selfTest(){
         Lib.debug('v',"\n---- Entering selfTest() for Alarm.class ---------------------------------------");
 
-        Lib.debug('v',"\n-- Test 1: Assure that a thread waits a certain time. --------------------------");
+        Lib.debug('v',"\n-- Test 1: Assure that threads wake in order. ----------------------------------");
         Lib.debug('v',"-- Alarm Thread 2 should awaken 5000 ticks after Alarm Thread 1. ---------------");
-        KThread thread1 = new KThread(new AlarmTestThread(Machine.timer().getTime() + 10000, null));
+        KThread thread1 = new KThread(new AlarmTestThread(Machine.timer().getTime() + 20000, null));
         thread1.setName("Alarm Thread 1");
-        KThread thread2 = new KThread(new AlarmTestThread(Machine.timer().getTime() + 15000, null));
+        KThread thread2 = new KThread(new AlarmTestThread(Machine.timer().getTime() + 10000, null));
         thread2.setName("Alarm Thread 2");
         thread1.fork();
         thread2.fork();
