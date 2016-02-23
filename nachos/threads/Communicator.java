@@ -102,6 +102,7 @@ public class Communicator {
         public void run(){
             Lib.debug('u',"\n"+name+" Speaking message:"+message);
             ourCom.speak(message);
+            KThread.finish();
         }
     }
     private static class testListener implements Runnable{
@@ -115,6 +116,7 @@ public class Communicator {
         public void run(){
             Lib.debug('u', "\n"+name+" Listening for message");
             Lib.debug('u',"\n"+name+" heard message:"+ourCom.listen());
+            KThread.finish();
         }
         
     }
