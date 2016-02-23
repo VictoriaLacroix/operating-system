@@ -54,6 +54,7 @@ public class ThreadedKernel extends Kernel {
 	    ElevatorBank.selfTest();
 	}
 	Communicator.selfTest();
+	MakeWater.selfTest();
     }
     
     /**
