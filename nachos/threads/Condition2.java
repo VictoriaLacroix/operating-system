@@ -2,7 +2,8 @@ package nachos.threads;
 
 import nachos.machine.*;
 import java.util.Queue;
-import java.util.ArrayDeque;
+
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * An implementation of condition variables that disables interrupt()s for
@@ -26,8 +27,9 @@ public class Condition2 {
         this.conditionLock = conditionLock;
 	
     }
-    
-    private ThreadQueue waitQueue = ThreadedKernel.scheduler.newThreadQueue(false);
+	
+    private LinkedBlockingQueue<KThread> waitQueue2 = new LinkedBlockingQueue<KThread>();
+   // private ThreadQueue waitQueue = ThreadedKernel.scheduler.newThreadQueue(false);
 	private boolean isEmpty = true;
     private Lock conditionLock;
     public static boolean supressDebug = true;  
@@ -103,11 +105,12 @@ public class Condition2 {
         if(supressDebug == false)
             Lib.debug('e', KThread.currentThread().getName() + " is sleeping now!");
     
-        waitQueue.waitForAccess(KThread.currentThread());
+       // waitQueue.waitForAccess(KThread.currentThread());
+		waitQueue2.offer(KThread.currentThread());
         isEmpty = false;
         if(supressDebug == false){
             Lib.debug('e', "\n Current Sleeping threads: \n" );
-			waitQueue.print();
+			Lib.debug('e', waitQueue2.toString());
 				
             Lib.debug('e', "\n" );
         }
@@ -130,14 +133,14 @@ public class Condition2 {
                 Lib.assertTrue(conditionLock.isHeldByCurrentThread());
                 boolean iStat = Machine.interrupt().disable();
                 
-                KThread kthread = waitQueue.nextThread();
-                
+                //KThread kthread = waitQueue.nextThread();
+                KThread kthread = waitQueue2.poll();
                 if(kthread !=null ){
                    
                     if(supressDebug == false){
                         Lib.debug('e',KThread.currentThread().getName() + " is awoken now! \n");
                         Lib.debug('e', "Threads still on queue: \n" );
-						waitQueue.print();
+						Lib.debug('e', waitQueue2.toString());
                         Lib.debug('e', "\n" );
                     }
                     kthread.ready();
