@@ -121,9 +121,9 @@ public class Communicator {
         
     }
     public static void selfTest(){
-        Lib.debug('u',"\nBegin Communicator selfTest");
+        Lib.debug('u',"\n----------------------------Begin Communicator selfTest---------------------------------");
         Communicator ourCom = new Communicator(); //Communicator for our testcase
-        Lib.debug('u',"\nTest 1 : Queued a Speaker with message = 1 then a Listener");
+        Lib.debug('u',"\n----Test 1 : Queued a Speaker with message = 1 then a Listener-----");
         KThread t1 = new KThread(new testSpeaker(ourCom,1,"SpeakerThread1")); 
         t1.setName("SpeakerThread1");
         t1.fork();
@@ -132,7 +132,7 @@ public class Communicator {
         t2.fork();
         t1.join();//queueing the speaker
         t2.join();//queueing the listener
-        Lib.debug('u',"\nTest 1 end\nTest 2 : Queued a Listener then a Speaker with a message = 2");
+        Lib.debug('u',"\nTest 1 end\n----Test 2 : Queued a Listener then a Speaker with a message = 2----");
         KThread t3 = new KThread(new testListener(ourCom,"ListenerThread2"));
         t3.setName("ListenerThread2");      
         t3.fork();
@@ -141,7 +141,7 @@ public class Communicator {
         t4.fork();
         t3.join();//queueing the listener
         t4.join();//queueing the speaker
-        Lib.debug('u',"\nTest 2 end\nTest 3: Queued two Speakers with message = 3 and 4, then two Listeners");
+        Lib.debug('u',"\nTest 2 end\n----Test 3: Queued two Speakers with message = 3 and 4, then two Listeners----");
         KThread t5 = new KThread(new testSpeaker(ourCom,3,"SpeakerThread3"));
         KThread t6 = new KThread(new testSpeaker(ourCom,4,"SpeakerThread4"));
         t5.setName("SpeakerThread3");       
@@ -158,7 +158,7 @@ public class Communicator {
         t6.join();//queueing the speaker #2
         t7.join();//queueing the listener #1
         t8.join();//queueing the listener #2
-        Lib.debug('u',"\nTest 3 end\nTest 4: Queued two Listeners then two Speakers  with message = 5 and 6");
+        Lib.debug('u',"\nTest 3 end\n----Test 4: Queued two Listeners then two Speakers  with message = 5 and 6----");
         KThread t9 = new KThread(new testListener(ourCom,"ListenerThread5"));
         KThread t10 = new KThread(new testListener(ourCom,"LestenerThread6"));
         t9.setName("ListenerThread5");      
@@ -175,6 +175,6 @@ public class Communicator {
         t10.join();//queueing the listener #2
         t11.join();//queueing the speaker #1
         t12.join();//queueing the speaker #2
-        Lib.debug('u',"\nTest 4 end\nCommunicator selfTest end");
+        Lib.debug('u',"\nTest 4 end\n-----------------------------------------Communicator selfTest end--------------------------------------");
     }
 }

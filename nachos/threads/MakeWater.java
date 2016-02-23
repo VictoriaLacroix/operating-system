@@ -87,14 +87,14 @@ public class MakeWater {
 
 
 	public static void selfTest(){
-		Lib.debug('w',"\nBegin MakeWater selfTest");
+		Lib.debug('w',"\n------------------------Begin MakeWater selfTest----------------------------");
 
 		MakeWater maker = new MakeWater();
 
 		KThread HT1,HT2,HT3,HT4,HT5,HT6,HT7,HT8,OT1,OT2,OT3,OT4;
 
 
-		Lib.debug('w',"\nMakeWater test 1 : queue 2 H then 1 O");
+		Lib.debug('w',"\n-----------MakeWater test 1 : queue 2 H then 1 O------------");
 		HT1 = new KThread(new TestThread(maker, "Hydrogen Thread 1",false));
 		HT2 = new KThread(new TestThread(maker, "Hydrogen Thread 2",false));
 		OT1 = new KThread(new TestThread(maker, "Oxygen Thread 1",true));
@@ -111,7 +111,7 @@ public class MakeWater {
 		Lib.debug('w',"\nMakeWater test1 finished");
 
 
-		Lib.debug('w',"\nMakeWater test2 : queue an O and then 2 H");
+		Lib.debug('w',"\n---------------MakeWater test2 : queue an O and then 2 H------------");
 
 		HT3 = new KThread(new TestThread(maker, "Hydrogen Thread 3",false));
 		HT4 = new KThread(new TestThread(maker, "Hydrogen Thread 4",false));
@@ -127,7 +127,7 @@ public class MakeWater {
 		HT4.join();
 
 		Lib.debug('w',"\nMakeWater test2 finished");
-		Lib.debug('w',"\nMakeWater test2 : queue 2 O and then 4 H");
+		Lib.debug('w',"\n-------------MakeWater test3 : queue 2 O and then 4 H-------------");
 
 		HT5 = new KThread(new TestThread(maker, "Hydrogen Thread 3",false));
 		HT6 = new KThread(new TestThread(maker, "Hydrogen Thread 4",false));
@@ -151,9 +151,9 @@ public class MakeWater {
 		HT7.join();
 		HT8.join();
 
-		Lib.debug('w',"\nMakeWater test2 finished");
+		Lib.debug('w',"\nMakeWater test3 finished");
 
-		Lib.debug('w',"\nExit MakeWater selfTest");
+		Lib.debug('w',"\n--------------------------------Exit MakeWater selfTest----------------------------");
 	}
 
 
