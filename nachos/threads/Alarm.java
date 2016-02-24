@@ -128,7 +128,7 @@ public class Alarm {
          * Test 1 tests the wake order and times for threads that use alarms.
          */
         Lib.debug('v',"\n-- Test 1: Assure that threads wake in order. ----------------------------------");
-        Lib.debug('v',"-- Alarm Thread 2 should awaken 5000 ticks after Alarm Thread 1. ---------------");
+        Lib.debug('v',"-- Alarm Thread 1 should awaken 10000 ticks after Alarm Thread 2. ---------------");
         KThread thread1 = new KThread(new AlarmTestThread(Machine.timer().getTime() + 20000, null));
         thread1.setName("Alarm Thread 1");
         KThread thread2 = new KThread(new AlarmTestThread(Machine.timer().getTime() + 10000, null));
