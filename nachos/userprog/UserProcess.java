@@ -5,7 +5,7 @@ import nachos.threads.*;
 import nachos.userprog.*;
 
 import java.io.EOFException;
-
+import java.util.Arrays;
 /**
  * Encapsulates the state of a user process that is not contained in its
  * user thread (or threads). This includes its address translation state, a
@@ -23,10 +23,26 @@ public class UserProcess {
      * Allocate a new process.
      */
     public UserProcess() {
+
+	myPID = nachosPID++;	
+
 	int numPhysPages = Machine.processor().getNumPhysPages();
-	pageTable = new TranslationEntry[numPhysPages];
-	for (int i=0; i<numPhysPages; i++)
-	    pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
+
+	frameTable = new boolean[numPhysPages/stackPages];
+	pageTable = new TranslationEntry[stackPages];
+
+	System.out.println(frameTable.length);
+
+        // Allocate the page table
+        int frame;
+        for(frame = 0; frame < frameTable.length; ++frame){if(!frameTable[frame]){break;}}
+
+	Lib.assertTrue(frame < frameTable.length);
+
+	frameTable[frame] = true;
+
+	for (int i=0; i<stackPages; i++)
+	    pageTable[i] = new TranslationEntry(i,i+(8*frame), true,false,false,false);
     }
     
     /**
@@ -88,7 +104,6 @@ public class UserProcess {
      */
     public String readVirtualMemoryString(int vaddr, int maxLength) {
 	Lib.assertTrue(maxLength >= 0);
-
 	byte[] bytes = new byte[maxLength+1];
 
 	int bytesRead = readVirtualMemory(vaddr, bytes);
@@ -131,16 +146,56 @@ public class UserProcess {
 				 int length) {
 	Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
+	//assure vaddr is within bounds
+	if((vaddr < 0) || (vaddr >= pageSize*stackPages)){return 0;}
+
 	byte[] memory = Machine.processor().getMemory();
-	
-	// for now, just assume that virtual addresses equal physical addresses
-	if (vaddr < 0 || vaddr >= memory.length)
-	    return 0;
 
-	int amount = Math.min(length, memory.length-vaddr);
-	System.arraycopy(memory, vaddr, data, offset, amount);
 
-	return amount;
+	int bytesCopied = 0;	
+
+	//trim amount of bytes to copy, if length would cuse an out of bounds read
+	int copyLength;
+	if(length+vaddr > pageSize*stackPages){
+		copyLength = (pageSize*stackPages)-vaddr;
+	}else{
+		copyLength = length;
+	}
+
+
+	while(bytesCopied < copyLength){
+
+		//amount to copy fom the page on the current iteration
+		//offsets based on the vaddr if this is the first iteration
+		//will not read entire page if there is less left to read than the size of the page
+		int amount;
+		if(bytesCopied == 0){
+			amount = pageSize - (vaddr % pageSize);
+		}else{
+			amount = Math.min(pageSize, (copyLength - bytesCopied));
+		}
+
+		//determine which page to read from this iteration
+		int page = (vaddr + bytesCopied) / pageSize;
+
+
+		//if somehow we have reach out of bounds, terminate read here
+		if(page >= stackPages){return bytesCopied;}
+
+		//physical address of the page to read from
+		int paddr = pageTable[page].ppn * pageSize;
+
+		//if this is the first iteration, offset based on the vaddr
+		if(bytesCopied == 0){
+			paddr += vaddr % pageSize;
+		}
+
+		//copy over the data and increment the bytesCopied
+		System.arraycopy(memory, paddr, data, (offset + bytesCopied), amount);
+		bytesCopied += amount;
+	}
+
+	return bytesCopied;
     }
 
     /**
@@ -174,16 +229,55 @@ public class UserProcess {
 				  int length) {
 	Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
+	//assure vaddr is within bounds
+	if((vaddr < 0) || (vaddr >= pageSize*stackPages)){return 0;}
+	
+
+
 	byte[] memory = Machine.processor().getMemory();
 	
-	// for now, just assume that virtual addresses equal physical addresses
-	if (vaddr < 0 || vaddr >= memory.length)
-	    return 0;
+	//trim amount of bytes to copy, if length would cuse an out of bounds read
+	int copyLength;
+	if(length+vaddr > pageSize*stackPages){
+		copyLength = (pageSize*stackPages)-vaddr;
+	}else{
+		copyLength = length;
+	}
 
-	int amount = Math.min(length, memory.length-vaddr);
-	System.arraycopy(data, offset, memory, vaddr, amount);
+	int bytesCopied = 0;
+	while(bytesCopied < copyLength){
 
-	return amount;
+		//amount to copy fom the page on the current iteration
+		//offsets based on the vaddr if this is the first iteration
+		//will not write to entire page if there isn't enough to write
+		int amount;
+		if(bytesCopied == 0){
+			amount = pageSize - (vaddr % pageSize);
+		}else{
+			amount = Math.min(pageSize, (copyLength - bytesCopied));
+		}
+
+		//determine which page to read from this iteration
+		int page = (vaddr + bytesCopied) / pageSize;
+
+
+		//if somehow we have reach out of bounds, terminate read here
+		if(page >= stackPages){return bytesCopied;}
+
+		//physical address of the page to read from
+		int paddr = pageTable[page].ppn * pageSize;
+
+		//if this is the first iteration, offset based on the vaddr
+		if(bytesCopied == 0){
+			paddr += vaddr % pageSize;
+		}
+
+		//copy over the data and increment the bytesCopied
+		System.arraycopy(data, (offset + bytesCopied), memory, (paddr + bytesCopied), amount);
+		bytesCopied += amount;
+	}
+
+	return bytesCopied;
     }
 
     /**
@@ -339,6 +433,9 @@ public class UserProcess {
      * Handle the halt() system call. 
      */
     private int handleHalt() {
+	if(KThread.currentThread() instanceof UThread)
+		return -1;
+
 
 	Machine.halt();
 	
@@ -392,6 +489,33 @@ public class UserProcess {
 	case syscallHalt:
 	    return handleHalt();
 
+	case syscallExit:
+	    return handleExit(a0);
+
+	case syscallExec:
+	    return handleExec(a0,a1,a2);
+
+	case syscallJoin:
+	    return handleJoin(a0,a1);
+
+	case syscallCreate:
+	    return handleCreat(a0);
+
+	case syscallOpen:
+	    return handleOpen(a0);
+
+	case syscallRead:
+	    return handleRead(a0,a1,a2);
+
+	case syscallWrite:
+	    return handleWrite(a0,a1,a2);
+
+	case syscallClose:
+	    return handleClose(a0);
+
+	case syscallUnlink:
+	    return handleUnlink(a0);
+
 
 	default:
 	    Lib.debug(dbgProcess, "Unknown syscall " + syscall);
@@ -399,6 +523,287 @@ public class UserProcess {
 	}
 	return 0;
     }
+
+
+private int handleCreat(int filename){
+
+		//fetch the name
+		byte[] byteString = new byte[256];
+		readVirtualMemory(filename, byteString, 0, 256);
+
+		//find the null terminator
+		int i;
+		for(i = 0; byteString[i]!=0; i++);
+
+		//conver the name into a string
+		byte[] temp = new byte[i];
+		System.arraycopy(byteString, 0, temp, 0, i);		
+		String read = new String(temp);
+
+		//check the file table for the give file
+		int index;
+		for(index = 0; index < 16 && openFiles[index].getName() != read; index++);
+		if(index < 16){
+			//if the file is already in the file table, it already exists, no need to create a new one
+			//so, just  increment the conter for how many processes are editing/reading this file
+			processCount[index]++;
+			return index;
+		}
+
+		//if the file is not in the file table, find an open slot in the file table, and put it there
+		for(index = 0; index < 16 && openFiles[index] != null; index++);
+		//if there is no open slots in the file table, then return -1 to indicate that it is done
+		if(index >= 16){return -1;}
+		//the open slot will be given the file if it exists, or a new file if it didn't already exist
+		openFiles[index] = Machine.stubFileSystem().open(read,true);
+		processCount[index]++;
+		return index;
+	}
+	
+private int handleOpen(int filename){
+
+		//fetching the filename, cutting it to size, turning it into a string 
+		byte[] byteString = new byte[256];
+		readVirtualMemory(filename,byteString,0,256);
+		int i;
+		for(i = 0; byteString[i] != 0; i++);
+		byte[] temp = new byte[i];
+		System.arraycopy(byteString, 0, temp, 0, i);		
+		String read = new String(temp);
+
+		//check for it in the file table, if present, increment the counter for that file, and return
+		int index;
+		for(index = 0; index < 16 && openFiles[index].getName() != read; index++);
+		if(index < 16){
+			processCount[index]++;
+			return index;
+		}
+
+		//otherwise if it  isn't add it to the table (if the file exists)
+		for(index = 0; index < 16 && openFiles[index] != null; index++);
+		//return -1 if there is no space in the filetable
+		if(index >=16){return -1;}
+		openFiles[index] = Machine.stubFileSystem().open(read,false);
+		processCount[index]++;
+		return index;
+}
+
+
+private int handleRead(int fd, int buffer, int size){
+
+	//fetching, cutting to size, and converting to string the filename
+	byte[] byteString = new byte[256];
+	readVirtualMemory(fd, byteString, 0,  256);
+	int i;
+	for(i=0;byteString[i]!=0;i++);
+	byte[] temp = new byte[i];
+	System.arraycopy(byteString,0,temp,0,i);
+	String fileName = new String(temp);
+
+
+	//check for it in the file table, if present, increment the counter for that file, and return
+	int index;
+	for(index = 0; index < 16 && openFiles[index].getName() != fileName; index++);
+	//if it isn't open, return -1 to indicate error
+	if(index >=16){return -1;}
+
+	//read the bytestring from file
+	byte[] tempBuffer = new byte[size];
+	int bytesRead = openFiles[index].read(0,tempBuffer,0,size);
+
+	//write it to the buffer for the calling process
+	writeVirtualMemory(buffer,tempBuffer,0,size);
+	return bytesRead;
+}
+
+
+
+private int handleWrite(int fd,int buffer,int size){
+
+
+	///fetching, cutting to size, and converting to string the filename
+	byte[] byteString = new byte[256];
+	readVirtualMemory(fd, byteString, 0,  256);
+	int i;
+	for(i=0;byteString[i]!=0;i++);
+	byte[] temp = new byte[i];
+	System.arraycopy(byteString,0,temp,0,i);
+	String fileName = new String(temp);
+
+
+	//check for it in the file table, if present, increment the counter for that file, and return
+	int index;
+	for(index = 0; index < 16 && openFiles[index].getName() != fileName; index++);
+	//if it isn't open, return -1 to indicate error
+	if(index >=16){return -1;}
+
+	//fetch the bytestring to be written to file
+	byte[] tempBuffer = new byte[size];
+	readVirtualMemory(buffer,tempBuffer,0,size);
+
+	//write the ytestring to file
+	int bytesWritten = openFiles[index].write(0,tempBuffer,0,size);
+	return bytesWritten;
+}
+
+
+private int handleClose(int fd){
+	//fetching, cutting to size, and converting to string, the filename
+	byte[] byteString = new byte[256];
+	readVirtualMemory(fd, byteString, 0,  256);
+	int i;
+	for(i=0;byteString[i]!=0;i++);
+	byte[] temp = new byte[i];
+	System.arraycopy(byteString,0,temp,0,i);
+	String toClose = new String(temp);
+
+	//find the index that the file is sitting at in the file table
+	int index;
+	for(index = 0; index < 16 && openFiles[index].getName() != toClose; index++);
+
+
+	if(index < 16){
+		//if found decrement the conter for number of precesses using this file and, if no processes still using it,
+		//remove it from the file table
+		processCount[index]--;
+		if(processCount[index]<=0){
+			openFiles[index].close();
+			openFiles[index] = null;
+			//if it was marked for deletion and is to be removed from the file table, delete it as well
+			if(awaitingDeletion[index]){handleUnlink(fd);}
+		}
+		return 0;
+	}else{
+		//file is already not in the file table
+		return -1;
+	}
+
+}
+
+
+private int handleUnlink(int filename){
+        
+
+	//fetching, cutting to size, and converting to string, the filename
+	byte[] byteString = new byte[256];
+	readVirtualMemory(filename, byteString, 0,  256);
+	int i;
+	for(i=0;byteString[i]!=0;i++);
+	byte[] temp = new byte[i];
+	System.arraycopy(byteString,0,temp,0,i);
+	String toUnlink = new String(temp);
+
+	//find the index of it in the file table
+        int index;
+        for(index = 0; index < 16 && openFiles[index].getName() != toUnlink; index++);
+        if(index < 16){
+		//if in the file table decrement the counter for number of processes using this file 
+	        processCount[index] --;
+	        if(processCount[index] > 0){
+			//if there are still processes using this file, mark it for deletion and return
+	                awaitingDeletion[index] = true;
+	                return 1;
+	        }
+		//otherwise, remove it from the file table
+        	awaitingDeletion[index] = false;
+        	openFiles[index] = null;
+	}
+
+	//finally, delete the file
+        boolean success = Machine.stubFileSystem().remove(toUnlink);
+	if(success){
+		return 0;
+	}else{
+		return 1;
+	}
+
+}
+
+
+private int handleExec(int filenameAddr, int argc, int argvAddr){
+
+   int[] argPtrs = new int[argc];
+
+   for (int i=0; i < argc; i++ ){
+      byte[] temp = new byte[4];
+      readVirtualMemory(argvAddr+(i*4),temp,0,4);
+      argPtrs[i] = Lib.bytesToInt(temp,0);
+   }
+
+
+    String[] args = new String[argc];
+
+
+   for (int j=0; j<argc; j++){
+      
+      byte[] byteString = new byte[256];
+      readVirtualMemory(argPtrs[j], byteString, 0,  256);  
+      int i;
+      for(i = 0; byteString[i] != 0;  i++);
+      byte[] temp = new byte[i];
+      System.arraycopy(byteString,0,byteString, 0, i);
+      
+      args[j] = new String(temp);
+   }
+
+
+   byte[] byteString = new byte[256];
+   readVirtualMemory(filenameAddr, byteString, 0,  256);  
+   int i;
+   for(i = 0; byteString[i] != 0;  i++);
+   byte[] temp = new byte[i];
+   System.arraycopy(byteString,0,byteString, 0, i);
+
+   String filename = new String(temp);
+
+   execute(filename, args);
+
+   return 0;
+}
+
+
+
+
+
+
+
+private int handleJoin(int pidToJoin, int statusAddr){
+
+	if (isParent( pidToJoin, myPID )){
+
+	//call .join() on the uThread of the childPID
+	UserProcess childProcess = findProcess(pidToJoin);
+
+	if(childProcess != null) {
+		childProcess.thisUThread.join();
+
+		byte[] temp = new byte[4];
+		childProcess.readVirtualMemory(0,temp,0,4);
+		return Lib.bytesToInt(temp,0);
+	}
+
+	}
+
+	return -1;
+
+}
+
+	private int handleExit(int status){
+
+		writeVirtualMemory(0,Lib.bytesFromInt(status),0,0);
+		unloadSections();
+		thisUThread.finish();
+
+		boolean noLivingProcesses = true;
+		for(int i =0; i<frameTable.length;i++){
+			if(frameTable[i] = true){noLivingProcesses = false;}
+		}
+		if(noLivingProcesses){//there are no living processes
+			Machine.halt();
+		}
+
+		return 0;
+	}
 
     /**
      * Handle a user exception. Called by
@@ -410,25 +815,71 @@ public class UserProcess {
      */
     public void handleException(int cause) {
 	Processor processor = Machine.processor();
-
 	switch (cause) {
-	case Processor.exceptionSyscall:
-	    int result = handleSyscall(processor.readRegister(Processor.regV0),
-				       processor.readRegister(Processor.regA0),
-				       processor.readRegister(Processor.regA1),
-				       processor.readRegister(Processor.regA2),
-				       processor.readRegister(Processor.regA3)
-				       );
+		case Processor.exceptionSyscall:
+		int result = handleSyscall(processor.readRegister(Processor.regV0),
+			processor.readRegister(Processor.regA0),
+			processor.readRegister(Processor.regA1),
+			processor.readRegister(Processor.regA2),
+			processor.readRegister(Processor.regA3));
+
 	    processor.writeRegister(Processor.regV0, result);
 	    processor.advancePC();
 	    break;				       
 				       
-	default:
-	    Lib.debug(dbgProcess, "Unexpected exception: " +
-		      Processor.exceptionNames[cause]);
-	    Lib.assertNotReached("Unexpected exception");
+		default:
+			Lib.debug(dbgProcess, "Unexpected exception: " +
+			Processor.exceptionNames[cause]);
+			Lib.assertNotReached("Unexpected exception");
 	}
     }
+
+
+public UserProcess findProcess(int PID){
+	for (int i = 0; i <= processes.length ; i++){
+		if (myPID == PID){
+			return processes[i];
+		}
+	}
+	return null;
+}
+
+//This Function will search through pidParents array and check return true if the parent
+//passed as argument is the actual parent of the child passed as argument.
+public boolean isParent (int childPID, int parentPID){
+	for (int i=0; i <= pidParents.length; i++){
+		if(childPID == pidParents[i][0] && parentPID == pidParents[i][1]){
+			return true;
+		}
+	}
+	return false;
+}
+
+
+
+
+
+    static OpenFile[] openFiles = new OpenFile[16];        //an array of files being worked on
+    static boolean[] awaitingDeletion = new boolean[16]; //an array of booleans describing if the file is awaiting deletion
+    static int[] processCount = new int[16];    //an array of the amount of processes that have that file open
+
+
+    static boolean[] frameTable;//the frame table
+    private int myFrame;//this process' frame index
+
+
+
+
+    int myPID; // PID of current process
+    public UThread thisUThread; // UThread that belongs to current process
+    static UserProcess[] processes = new UserProcess[16];  // Array of userProcesses
+    static int[][] pidParents = new int[17][2]; // 2d array, to store pids and their parents pid
+    static int nachosPID = 1; // always a non negative integer, all pids should be unique, increment when new pid is assigned.    
+
+
+
+
+
 
     /** The program being run by this process. */
     protected Coff coff;
