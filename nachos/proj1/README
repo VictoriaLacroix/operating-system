@@ -1,0 +1,10 @@
+Group 3
+
+David Vallieres
+Arly Mathiasen
+Victoria Lacroix
+Eric Gelinas
+
+Run the nachOS machine with the following debug flags : efuvw
+
+even without the w flag enabled, MakeWater's selftest will output "water is made", as the task asked for it to be a print (and not a debug message)

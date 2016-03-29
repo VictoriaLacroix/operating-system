@@ -1,0 +1,410 @@
+Tested Join by :
+- joining threads in progress
+- joining a thread in progress to a thread which hadn't yet started running
+- joining a thread in progress to a finished thread
+- joining a thread to a thread which was joined to a third thread.
+
+Tested Alarm by:
+
+- entering threads into the alarm in reverse waking order, and assuring that the alarm woke them up in order
+- Trying to send th alarm a thread with a wake up time that's already passed
+- assuring that a thread joined on a sleeping thread will still wait for that thread
+
+Tested Condition2 by:
+- sleeping threads on the condition2
+- waking threads on the condition2
+- calling wakeAll() on the condition2 
+
+Tested Communicator by:
+- queueing  a speaker and then a listener (and vice-versa)
+- queing two speakers and then two listeners (and vice-versa)
+
+Tested MakeWater by:
+- queueing up the H's before the O (and vice-versa)
+- queueing up 2 water's worth of O and then 2 water's worth of H
+
+you can replicate the following output but runing thenachos machine with the following debug flags : efuvw
+
+nachos 5.0j initializing... config interrupt timer user-check grader
+*** thread 0 looped 0 times
+*** thread 1 looped 0 times
+*** thread 0 looped 1 times
+*** thread 1 looped 1 times
+*** thread 0 looped 2 times
+*** thread 1 looped 2 times
+*** thread 0 looped 3 times
+*** thread 1 looped 3 times
+*** thread 0 looped 4 times
+*** thread 1 looped 4 times
+-----------KThread join test 1 : join thread already in progress------------
+T1 has started
+T1 is running
+T2 has started
+joining T1 (#3)
+T1 is running
+T1 is running
+T1 is running
+T1 is running
+T1 is running
+T1 is running
+T1 is running
+T1 is running
+T1 is running
+T1 is finished
+T2 is running
+T2 is running
+T2 is running
+T2 is running
+T2 is running
+T2 is running
+T2 is running
+T2 is running
+T2 is running
+T2 is running
+T2 is finished
+Kthread join test 1 complete
+Kthread join test 2 : join thread which has not yet started running
+T3 has started
+joining T4 (#5)
+T4 has started
+T4 is running
+T4 is running
+T4 is running
+T4 is running
+T4 is running
+T4 is running
+T4 is running
+T4 is running
+T4 is running
+T4 is running
+T4 is finished
+T3 is running
+T3 is running
+T3 is running
+T3 is running
+T3 is running
+T3 is running
+T3 is running
+T3 is running
+T3 is running
+T3 is running
+T3 is finished
+-------KThread join test 2 complete
+KThread join test 3 : join a finished thread---------
+T5 has started
+joining T4 (#5)
+T5 is running
+T5 is running
+T5 is running
+T5 is running
+T5 is running
+T5 is running
+T5 is running
+T5 is running
+T5 is running
+T5 is running
+T5 is finished
+--------KThread join test 3 complete
+KThread join test 4 : join a thread that's joined a thread-------
+T6 has started
+T6 is running
+T7 has started
+joining T6 (#8)
+T8 has started
+joining T7 (#9)
+T6 is running
+T6 is running
+T6 is running
+T6 is running
+T6 is running
+T6 is running
+T6 is running
+T6 is running
+T6 is running
+T6 is finished
+T7 is running
+T7 is running
+T7 is running
+T7 is running
+T7 is running
+T7 is running
+T7 is running
+T7 is running
+T7 is running
+T7 is running
+T7 is finished
+T8 is running
+T8 is running
+T8 is running
+T8 is running
+T8 is running
+T8 is running
+T8 is running
+T8 is running
+T8 is running
+T8 is running
+T8 is finished
+-------KThread join test 4 complete
+KThread join tests complete----------
+----------------------------------------Exit KThread.selfTest--------------------------------
+
+---- Entering selfTest() for Alarm.class ---------------------------------------
+
+-- Test 1: Assure that threads wake in order. ----------------------------------
+-- Alarm Thread 2 should awaken 5000 ticks after Alarm Thread 1. ---------------
+1250: Alarm Thread 1 is starting execution.
+1250: Alarm Thread 1 is sleeping until 21220.
+1260: Alarm Thread 2 is starting execution.
+1260: Alarm Thread 2 is sleeping until 11220.
+11650: Alarm Thread 2 woke up.
+11650: Alarm Thread 2 is finishing execution.
+21690: Alarm Thread 1 woke up.
+21690: Alarm Thread 1 is finishing execution.
+
+-- Test 2: Assure that a thread will wake up if told to wait for a past time. --
+-- Alarm Thread 3 should not sleep. --------------------------------------------
+21730: Alarm Thread 3 is starting execution.
+21730: Alarm Thread 3 doesn't need to sleep.
+21730: Alarm Thread 3 is finishing execution.
+
+-- Test 3: Assure that a thread will wait for a sleeping thread. ---------------
+-- Alarm Thread 5 will wait until Alarm Thread 4 wakes up. ---------------------
+21770: Alarm Thread 4 is starting execution.
+21770: Alarm Thread 4 is sleeping until 31740.
+21780: Alarm Thread 5 is starting execution.
+21780: Alarm Thread 5 is waiting for Alarm Thread 4 (#14).
+31860: Alarm Thread 4 woke up.
+31860: Alarm Thread 4 is finishing execution.
+31880: Alarm Thread 5 doesn't need to sleep.
+31880: Alarm Thread 5 is finishing execution.
+
+---- Exiting selfTest() for Alarm.class ----------------------------------------
+
+
+
+
+ --------------------------------- !Entering Condition2 SelfTest! -------------------------------
+
+
+
+ ------Tests to see that I can put threads to sleep and they exist on the threadqueue within Condition2-----
+
+
+   // 2 new threads  
+
+ 
+ thread1 is being put to sleep if it can acquire lock.
+thread1 is sleeping now!
+
+ Current Sleeping threads: 
+
+[thread1 (#16)]
+
+
+ 
+ thread2 is being put to sleep if it can acquire lock.
+thread2 is sleeping now!
+
+ Current Sleeping threads: 
+
+[thread1 (#16), thread2 (#17)]
+
+
+
+
+
+ ------// Continues Tests to make sure wake() function works.-----
+
+
+   //wake nextThread  
+
+main is awoken now! 
+
+Threads still on queue: 
+
+[thread2 (#17)]
+
+
+
+
+
+ ------// Continues Tests to make sure wakeall() function works.-----
+
+
+   // 2 new threads  
+
+thread1 is awake.
+ 
+ thread3 is being put to sleep if it can acquire lock.
+thread3 is sleeping now!
+
+ Current Sleeping threads: 
+
+[thread2 (#17), thread3 (#18)]
+
+
+ 
+ thread4 is being put to sleep if it can acquire lock.
+thread4 is sleeping now!
+
+ Current Sleeping threads: 
+
+[thread2 (#17), thread3 (#18), thread4 (#19)]
+
+
+
+   //wakeAll threads  
+
+main is awoken now! 
+
+Threads still on queue: 
+
+[thread3 (#18), thread4 (#19)]
+
+
+main is awoken now! 
+
+Threads still on queue: 
+
+[thread4 (#19)]
+
+
+main is awoken now! 
+
+Threads still on queue: 
+
+[]
+
+
+ --------------------------------- !Exiting Condition2 SelfTest! ------------------------------- 
+
+
+
+
+----------------------------Begin Communicator selfTest---------------------------------
+
+----Test 1 : Queued a Speaker with message = 1 then a Listener-----
+
+SpeakerThread1 Speaking message:1
+
+ListenerThread1 Listening for message
+
+ListenerThread1 heard message:1
+
+Test 1 end
+----Test 2 : Queued a Listener then a Speaker with a message = 2----
+
+ListenerThread2 Listening for message
+
+SpeakerThread2 Speaking message:2
+
+ListenerThread2 heard message:2
+
+Test 2 end
+----Test 3: Queued two Speakers with message = 3 and 4, then two Listeners----
+
+SpeakerThread3 Speaking message:3
+
+SpeakerThread4 Speaking message:4
+
+ListenerThread3 Listening for message
+
+ListenerThread4 Listening for message
+
+ListenerThread3 heard message:3
+
+ListenerThread4 heard message:4
+
+Test 3 end
+----Test 4: Queued two Listeners then two Speakers  with message = 5 and 6----
+
+ListenerThread5 Listening for message
+
+LestenerThread6 Listening for message
+
+SpeakerThread5 Speaking message:5
+
+SpeakerThread6 Speaking message:6
+
+ListenerThread5 heard message:5
+
+LestenerThread6 heard message:6
+
+Test 4 end
+-----------------------------------------Communicator selfTest end--------------------------------------
+
+------------------------Begin MakeWater selfTest----------------------------
+
+-----------MakeWater test 1 : queue 2 H then 1 O------------
+
+Hydrogen Thread 1 Started
+
+Hydrogen Thread 2 Started
+
+Oxygen Thread 1 Started
+Water is made
+
+Oxygen Thread 1 Finished
+
+Hydrogen Thread 1 Finished
+
+Hydrogen Thread 2 Finished
+
+MakeWater test1 finished
+
+---------------MakeWater test2 : queue an O and then 2 H------------
+
+Oxygen Thread 2 Started
+
+Hydrogen Thread 3 Started
+
+Hydrogen Thread 4 Started
+Water is made
+
+Hydrogen Thread 4 Finished
+
+Hydrogen Thread 3 Finished
+
+Oxygen Thread 2 Finished
+
+MakeWater test2 finished
+
+-------------MakeWater test3 : queue 2 O and then 4 H-------------
+
+Oxygen Thread 2 Started
+
+Oxygen Thread 2 Started
+
+Hydrogen Thread 3 Started
+
+Hydrogen Thread 4 Started
+Water is made
+
+Hydrogen Thread 4 Finished
+
+Hydrogen Thread 3 Started
+
+Hydrogen Thread 4 Started
+Water is made
+
+Hydrogen Thread 4 Finished
+
+Hydrogen Thread 3 Finished
+
+Oxygen Thread 2 Finished
+
+Oxygen Thread 2 Finished
+
+Hydrogen Thread 3 Finished
+
+MakeWater test3 finished
+
+--------------------------------Exit MakeWater selfTest----------------------------
+Machine halting!
+
+Ticks: total 35900, kernel 35900, user 0
+Disk I/O: reads 0, writes 0
+Console I/O: reads 0, writes 0
+Paging: page faults 0, TLB misses 0
+Network I/O: received 0, sent 0
+
